@@ -356,20 +356,20 @@ def to_report_row(index: int, row: dict[str, object], *, auth_mode: str, platfor
     username = str(row.get("username") or "N/A")
     title = str(row.get("text") or "N/A")
     is_success = row.get("status") == "success"
-    share_count = 0 if platform.upper() == "IG" else int(row.get("repost_count") or 0) + int(row.get("quote_count") or 0)
+    platform_upper = platform.upper()
     if is_success:
-        reply_value = row.get("reply_count") or 0
-        like_value = row.get("like_count") or 0
+        reply_value = _report_metric(row.get("reply_count"))
+        like_value = _report_metric(row.get("like_count"))
         view_value = row.get("view_count") or "N/A"
-        share_value = share_count
-        follower_value = (row.get("follower_count") or "N/A") if platform.upper() in {"IG", "FACEBOOK"} else "N/A"
+        share_value = _report_share_value(row, platform_upper)
+        follower_value = (row.get("follower_count") or "N/A") if platform_upper in {"IG", "FACEBOOK"} else "N/A"
     else:
         reply_value = "N/A"
         like_value = "N/A"
         view_value = "N/A"
         share_value = "N/A"
         follower_value = "N/A"
-    platform_label = {"THREADS": "Threads", "IG": "Instagram", "FACEBOOK": "Facebook"}.get(platform.upper(), platform)
+    platform_label = {"THREADS": "Threads", "IG": "Instagram", "FACEBOOK": "Facebook"}.get(platform_upper, platform)
 
     reach = row.get("reach") or "N/A"
     if reach != "N/A":
@@ -401,6 +401,23 @@ def to_report_row(index: int, row: dict[str, object], *, auth_mode: str, platfor
         "status": row.get("status") or "",
         "reach_status": reach_status,
     }
+
+
+def _report_metric(value: object) -> object:
+    return value if value not in (None, "", "N/A") else "N/A"
+
+
+def _report_share_value(row: dict[str, object], platform: str) -> object:
+    if platform == "IG":
+        return 0
+    if platform == "FACEBOOK":
+        return _report_metric(row.get("repost_count"))
+
+    repost_count = row.get("repost_count")
+    quote_count = row.get("quote_count")
+    if repost_count in (None, "", "N/A") or quote_count in (None, "", "N/A"):
+        return "N/A"
+    return int(repost_count) + int(quote_count)
 
 
 def enrich_followers(

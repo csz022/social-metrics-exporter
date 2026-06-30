@@ -46,10 +46,10 @@ def empty_row(post_url: str, status: str = STATUS_PARSE_FAILED) -> dict[str, obj
         "username": "N/A",
         "text": "N/A",
         "created_at": "N/A",
-        "like_count": 0,
-        "reply_count": 0,
-        "repost_count": 0,
-        "quote_count": 0,
+        "like_count": "N/A",
+        "reply_count": "N/A",
+        "repost_count": "N/A",
+        "quote_count": "N/A",
         "view_count": "N/A",
         "reach": "N/A",
         "follower_count": "N/A",
@@ -77,7 +77,9 @@ def parse_threads_page(
     json_blobs.extend(target_network_blobs)
 
     row["username"] = _extract_username(post_url, soup, normalized_text, json_blobs)
-    row["follower_count"] = _extract_follower_count(normalized_text)
+    visible_follower_count = _extract_follower_count(normalized_text)
+    if visible_follower_count is not None:
+        row["follower_count"] = visible_follower_count
     meta_follower_count = _extract_follower_count(" ".join(_extract_meta_contents(soup)))
     if row["follower_count"] in (None, "N/A") and meta_follower_count is not None:
         row["follower_count"] = meta_follower_count
@@ -110,7 +112,7 @@ def parse_threads_page(
         return ParsedPage(row=row, status=STATUS_POST_NOT_LOADED)
 
     required_signal = row["text"] != "N/A" or any(
-        row[field] for field in ("like_count", "reply_count", "repost_count", "quote_count")
+        _is_known_count(row[field]) for field in ("like_count", "reply_count", "repost_count", "quote_count")
     )
     if required_signal:
         row["status"] = STATUS_SUCCESS
@@ -333,6 +335,10 @@ def _looks_like_date(value: str) -> bool:
     )
 
 
+def _is_known_count(value: object) -> bool:
+    return value not in (None, "", "N/A")
+
+
 def _is_metric_line(value: str) -> bool:
     return bool(re.match(r"^[\d,.]+\s*[萬万千KkMm]?$", value.replace("\xa0", " ")))
 
@@ -401,7 +407,7 @@ def _extract_target_json_count(field: str, post_id: str, json_blobs: list[Any]) 
     for obj in _walk_json_objects(json_blobs):
         if not _json_object_matches_post_id(obj, post_id):
             continue
-        for scoped_obj in _walk_json_objects([obj]):
+        for scoped_obj in _target_metric_objects(obj):
             for key in key_hints[field]:
                 value = scoped_obj.get(key)
                 if isinstance(value, (int, float, str)):
@@ -409,6 +415,15 @@ def _extract_target_json_count(field: str, post_id: str, json_blobs: list[Any]) 
                     if parsed is not None:
                         return parsed
     return None
+
+
+def _target_metric_objects(obj: dict[str, Any]) -> list[dict[str, Any]]:
+    scoped = [obj]
+    for key in ("text_post_app_info", "media", "post", "root_post"):
+        value = obj.get(key)
+        if isinstance(value, dict):
+            scoped.append(value)
+    return scoped
 
 
 def _json_count_key_hints() -> dict[str, tuple[str, ...]]:

@@ -33,22 +33,24 @@ def parse_social_page(platform: str, post_url: str, html: str, visible_text: str
     counts_text = "\n".join([meta_contents, normalized_text])
     dom_metrics = _extract_dom_metrics(platform, post_url, dom_root)
     if platform == "IG":
-        row["like_count"] = _first_not_none(dom_metrics.get("like_count"), _first_count(counts_text, IG_LIKE_PATTERNS), _json_count(network_json_blobs or [], IG_LIKE_KEYS), 0)
-        row["reply_count"] = _first_not_none(dom_metrics.get("reply_count"), _first_count(counts_text, IG_COMMENT_PATTERNS), _json_count(network_json_blobs or [], COMMENT_KEYS), 0)
+        row["like_count"] = _first_not_none(dom_metrics.get("like_count"), _first_count(counts_text, IG_LIKE_PATTERNS), _json_count(network_json_blobs or [], IG_LIKE_KEYS), "N/A")
+        row["reply_count"] = _first_not_none(dom_metrics.get("reply_count"), _first_count(counts_text, IG_COMMENT_PATTERNS), _json_count(network_json_blobs or [], COMMENT_KEYS), "N/A")
         row["view_count"] = _first_not_none(dom_metrics.get("view_count"), _first_count(counts_text, VIEW_PATTERNS) if "/reel/" in post_url else None, "N/A")
         if row["view_count"] in (None, 0):
             row["view_count"] = "N/A"
     elif platform == "FACEBOOK":
-        row["like_count"] = _first_not_none(dom_metrics.get("like_count"), _first_count(counts_text, FB_REACTION_PATTERNS), _json_count(network_json_blobs or [], FB_REACTION_KEYS), 0)
-        row["reply_count"] = _first_not_none(dom_metrics.get("reply_count"), _first_count(counts_text, COMMENT_PATTERNS), _json_count(network_json_blobs or [], COMMENT_KEYS), 0)
-        row["repost_count"] = _first_not_none(dom_metrics.get("repost_count"), _first_count(counts_text, SHARE_PATTERNS), _json_count(network_json_blobs or [], SHARE_KEYS), 0)
+        row["like_count"] = _first_not_none(dom_metrics.get("like_count"), _first_count(counts_text, FB_REACTION_PATTERNS), _json_count(network_json_blobs or [], FB_REACTION_KEYS), "N/A")
+        row["reply_count"] = _first_not_none(dom_metrics.get("reply_count"), _first_count(counts_text, COMMENT_PATTERNS), _json_count(network_json_blobs or [], COMMENT_KEYS), "N/A")
+        row["repost_count"] = _first_not_none(dom_metrics.get("repost_count"), _first_count(counts_text, SHARE_PATTERNS), _json_count(network_json_blobs or [], SHARE_KEYS), "N/A")
         row["view_count"] = _first_not_none(dom_metrics.get("view_count"), _first_count(counts_text, VIEW_PATTERNS), _json_count(network_json_blobs or [], VIEW_KEYS), "N/A")
         reel_metrics = _extract_facebook_reel_rail_metrics(post_url, normalized_text)
         for field, value in reel_metrics.items():
             if row.get(field) in (None, 0, "N/A"):
                 row[field] = value
 
-    has_signal = row["text"] != "N/A" or any(row[field] for field in ("like_count", "reply_count", "repost_count", "quote_count"))
+    has_signal = row["text"] != "N/A" or any(
+        row[field] not in (None, "", "N/A") for field in ("like_count", "reply_count", "repost_count", "quote_count")
+    )
     row["status"] = STATUS_SUCCESS if has_signal else STATUS_PARSE_FAILED
     return row
 

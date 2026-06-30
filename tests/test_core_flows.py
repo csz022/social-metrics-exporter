@@ -189,7 +189,16 @@ class ThreadsParserTests(unittest.TestCase):
             html,
             visible_text,
             [
-                {"shortcode": "DaNC74PlEoV"},
+                {
+                    "shortcode": "DaNC74PlEoV",
+                    "related_threads": [
+                        {
+                            "shortcode": "RELATED_IN_CONTAINER",
+                            "like_count": 0,
+                            "text_post_app_info": {"direct_reply_count": 0, "repost_count": 0, "quote_count": 0},
+                        }
+                    ],
+                },
                 {
                     "shortcode": "RELATED123",
                     "like_count": 99,
@@ -203,10 +212,10 @@ class ThreadsParserTests(unittest.TestCase):
         )
 
         self.assertEqual(parsed.status, STATUS_SUCCESS)
-        self.assertEqual(parsed.row["like_count"], 0)
-        self.assertEqual(parsed.row["reply_count"], 0)
-        self.assertEqual(parsed.row["repost_count"], 0)
-        self.assertEqual(parsed.row["quote_count"], 0)
+        self.assertEqual(parsed.row["like_count"], "N/A")
+        self.assertEqual(parsed.row["reply_count"], "N/A")
+        self.assertEqual(parsed.row["repost_count"], "N/A")
+        self.assertEqual(parsed.row["quote_count"], "N/A")
         self.assertEqual(parsed.row["view_count"], 144)
 
     def test_threads_post_metrics_use_matching_post_json(self) -> None:
@@ -261,10 +270,10 @@ class ThreadsParserTests(unittest.TestCase):
         parsed = parse_threads_page(post_url, html, visible_text)
 
         self.assertEqual(parsed.status, STATUS_SUCCESS)
-        self.assertEqual(parsed.row["like_count"], 0)
-        self.assertEqual(parsed.row["reply_count"], 0)
-        self.assertEqual(parsed.row["repost_count"], 0)
-        self.assertEqual(parsed.row["quote_count"], 0)
+        self.assertEqual(parsed.row["like_count"], "N/A")
+        self.assertEqual(parsed.row["reply_count"], "N/A")
+        self.assertEqual(parsed.row["repost_count"], "N/A")
+        self.assertEqual(parsed.row["quote_count"], "N/A")
 
 
 class SocialParserTests(unittest.TestCase):
@@ -356,7 +365,7 @@ class SocialParserTests(unittest.TestCase):
         self.assertEqual(fb_row["status"], "success")
         self.assertEqual(fb_row["like_count"], 5)
         self.assertEqual(fb_row["reply_count"], 1)
-        self.assertEqual(fb_row["repost_count"], 0)
+        self.assertEqual(fb_row["repost_count"], "N/A")
 
     def test_profile_follower_count_from_text_and_json(self) -> None:
         self.assertEqual(parse_profile_follower_count("IG", "", "1.2萬 followers"), 12000)
@@ -650,7 +659,33 @@ class ExporterAndMainHelperTests(unittest.TestCase):
 
         self.assertEqual(ig_report["分享"], 0)
         self.assertEqual(threads_report["分享"], 7)
-        self.assertEqual(facebook_report["分享"], 7)
+        self.assertEqual(facebook_report["分享"], 3)
+
+    def test_success_report_rows_keep_unknown_metrics_as_na(self) -> None:
+        threads_row = {
+            "post_url": "https://www.threads.com/@alice/post/ABC123",
+            "username": "@alice",
+            "text": "Title",
+            "created_at": "2026-06-01",
+            "like_count": "N/A",
+            "reply_count": "N/A",
+            "repost_count": "N/A",
+            "quote_count": "N/A",
+            "view_count": 144,
+            "follower_count": "N/A",
+            "reach": "N/A",
+            "status": "success",
+        }
+        facebook_row = dict(threads_row, post_url="https://www.facebook.com/123_456", repost_count="N/A")
+
+        threads_report = to_report_row(1, threads_row, auth_mode="public", platform="THREADS")
+        facebook_report = to_report_row(1, facebook_row, auth_mode="public", platform="FACEBOOK")
+
+        self.assertEqual(threads_report["討論串總則數"], "N/A")
+        self.assertEqual(threads_report["點閱數/按讚數"], "N/A")
+        self.assertEqual(threads_report["瀏覽數"], 144)
+        self.assertEqual(threads_report["分享"], "N/A")
+        self.assertEqual(facebook_report["分享"], "N/A")
 
     def test_failed_report_rows_use_na_for_manual_backfill(self) -> None:
         row = {
