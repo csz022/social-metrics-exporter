@@ -68,7 +68,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", default=os.getenv("THREADS_INPUT", "input/urls.txt"), help="Path to URL list, one URL per line.")
     parser.add_argument("--sheet", default=os.getenv("THREADS_SHEET", ""), help="Google Sheet URL or local xlsx file. Uses the 文章標題 hyperlink as URL source.")
     parser.add_argument("--sheet-platforms", default=os.getenv("THREADS_SHEET_PLATFORMS", "THREADS"), help="Comma-separated platforms to read from --sheet: THREADS,IG,FACEBOOK, or ALL.")
-    parser.add_argument("--dry-run", action="store_true", help="Load inputs and print URL counts without scraping.")
     parser.add_argument("--output", default=os.getenv("THREADS_OUTPUT", "output/social_metrics.csv"), help="Path to output CSV.")
     parser.add_argument("--headful", action="store_true", default=env_bool("THREADS_HEADFUL", False), help="Show Chromium while scraping.")
     parser.add_argument(
@@ -187,13 +186,6 @@ def main() -> int:
     if not input_items:
         raise SystemExit(f"No URLs found in {input_label}")
     print(f"Input ready: {len(input_items)} URL(s)", flush=True)
-    if args.dry_run:
-        print(f"Loaded {len(input_items)} URL(s) from {input_label}")
-        for item in input_items[:20]:
-            print(f"{item.platform}\t{item.url}")
-        if len(input_items) > 20:
-            print(f"... {len(input_items) - 20} more URL(s)")
-        return 0
     urls = [item.url for item in input_items]
     item_by_url = {item.url: item for item in input_items}
 

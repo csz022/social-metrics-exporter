@@ -912,7 +912,6 @@ class GuiPreviewTests(unittest.TestCase):
                         "delay": "0",
                         "retries": "0",
                         "profile_search_scrolls": "7",
-                        "dry_run": "on",
                         "network_capture": "on",
                     },
                 )
@@ -926,7 +925,6 @@ class GuiPreviewTests(unittest.TestCase):
             self.assertIn('value="custom_failed.csv"', html)
             self.assertIn("https://www.instagram.com/p/IG123/", html)
             self.assertIn('<option value="IG" selected>IG</option>', html)
-            self.assertIn('name="dry_run" checked', html)
             self.assertIn('name="network_capture" checked', html)
         finally:
             gui_app.jobs.clear()

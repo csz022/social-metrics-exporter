@@ -85,7 +85,6 @@ CLI examples:
 ```bash
 uv run python src/main.py --sheet "https://docs.google.com/spreadsheets/d/.../edit?gid=..." --sheet-platforms ALL
 uv run python src/main.py --sheet local_file.xlsx --sheet-platforms THREADS
-uv run python src/main.py --sheet local_file.xlsx --dry-run
 ```
 
 ## Output

@@ -608,7 +608,6 @@ PAGE_TEMPLATE = """
               </div>
               <div class="checks">
                 {% for field, label in [
-                  ('dry_run', 'Dry run only'),
                   ('fetch_followers', 'Fetch followers'),
                   ('profile_search', 'Threads profile search'),
                   ('network_capture', 'Network capture'),
@@ -875,7 +874,6 @@ def build_form_defaults() -> dict[str, Any]:
         "delay": DEFAULT_DELAY,
         "retries": DEFAULT_RETRIES,
         "profile_search_scrolls": os.getenv("THREADS_PROFILE_SEARCH_SCROLLS", "12"),
-        "dry_run": False,
         "fetch_followers": DEFAULT_FETCH_FOLLOWERS,
         "profile_search": DEFAULT_PROFILE_SEARCH,
         "network_capture": DEFAULT_NETWORK_CAPTURE,
@@ -918,7 +916,6 @@ def build_submitted_form_defaults(
             "delay": delay,
             "retries": retries,
             "profile_search_scrolls": profile_search_scrolls,
-            "dry_run": bool(request.form.get("dry_run")),
             "fetch_followers": bool(request.form.get("fetch_followers")),
             "profile_search": bool(request.form.get("profile_search")),
             "network_capture": bool(request.form.get("network_capture")),
@@ -1201,8 +1198,6 @@ def start_job() -> Response:
     ]
     if request.form.get("headful"):
         cmd.append("--headful")
-    if request.form.get("dry_run"):
-        cmd.append("--dry-run")
     if request.form.get("debug"):
         pass
     else:
