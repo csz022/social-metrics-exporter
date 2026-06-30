@@ -22,7 +22,6 @@ from exporter import (
     write_failed_csv,
     write_report_csv,
 )
-from formulas import apply_formulas, apply_report_formulas
 from parser import STATUS_POST_NOT_LOADED, empty_row, parse_threads_page
 from scraper import ThreadsScraper
 from sheet_reader import load_sheet_urls
@@ -278,9 +277,8 @@ def main() -> int:
                     fallback_reason = profile_result.error
                 else:
                     fallback_reason = profile_result.error or fallback_reason
-        row = apply_formulas(row)
         raw_rows.append(row)
-        report_row = apply_report_formulas(to_report_row(index, row, auth_mode=auth_mode, platform=item.platform))
+        report_row = to_report_row(index, row, auth_mode=auth_mode, platform=item.platform)
         report_rows.append(report_row)
         if row["status"] != "success":
             failed_rows.append({"post_url": scraped.url, "status": row["status"], "reason": fallback_reason})
@@ -409,7 +407,6 @@ def enrich_followers(
         if cached is not None and cached != MISSING_PROFILE_CACHE_VALUE and raw_row.get("follower_count") in (None, "", "N/A"):
             raw_row["follower_count"] = cached
             report_row["粉絲團追蹤人數"] = cached
-            apply_report_formulas(report_row)
 
     missing_usernames = sorted(
         {
@@ -452,7 +449,6 @@ def enrich_followers(
         if username in follower_counts and raw_row.get("follower_count") in (None, "", "N/A"):
             raw_row["follower_count"] = follower_counts[username]
             report_row["粉絲團追蹤人數"] = follower_counts[username]
-            apply_report_formulas(report_row)
 
 
 def enrich_social_followers(
@@ -472,7 +468,6 @@ def enrich_social_followers(
         if cached is not None and cached != MISSING_PROFILE_CACHE_VALUE and raw_row.get("follower_count") in (None, "", "N/A"):
             raw_row["follower_count"] = cached
             report_row["粉絲團追蹤人數"] = cached
-            apply_report_formulas(report_row)
         if cached in (None, MISSING_PROFILE_CACHE_VALUE) and raw_row.get("follower_count") in (None, "", "N/A"):
             profile_by_url[profile_url] = (item.platform, item.author)
 
@@ -500,7 +495,6 @@ def enrich_social_followers(
         if key in follower_counts and raw_row.get("follower_count") in (None, "", "N/A"):
             raw_row["follower_count"] = follower_counts[key]
             report_row["粉絲團追蹤人數"] = follower_counts[key]
-            apply_report_formulas(report_row)
 
 
 def load_profile_cache(cache_path: Path | None) -> dict[str, object]:

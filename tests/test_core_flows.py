@@ -27,7 +27,6 @@ from exporter import (  # noqa: E402
     read_terminal_urls,
     write_csv,
 )
-from formulas import apply_formulas, apply_report_formulas  # noqa: E402
 from main import (  # noqa: E402
     InputItem,
     MISSING_PROFILE_CACHE_VALUE,
@@ -59,7 +58,7 @@ from social_parser import parse_profile_follower_count, parse_social_page  # noq
 
 
 class ThreadsParserTests(unittest.TestCase):
-    def test_parse_threads_visible_post_metrics_and_report_formulas(self) -> None:
+    def test_parse_threads_visible_post_metrics_and_report_fields(self) -> None:
         post_url = "https://www.threads.com/@alice/post/ABC123"
         html = """
         <html><head>
@@ -89,19 +88,24 @@ class ThreadsParserTests(unittest.TestCase):
         self.assertEqual(parsed.row["repost_count"], 5)
         self.assertEqual(parsed.row["quote_count"], 2)
 
-        raw_row = apply_formulas(dict(parsed.row))
-        self.assertEqual(raw_row["interaction_total"], 1241)
-        self.assertEqual(raw_row["thread_weight"], 1530)
-        self.assertEqual(raw_row["like_weight"], 36000)
-        self.assertEqual(raw_row["share_weight"], 420)
-        self.assertEqual(raw_row["value"], 37950)
+        raw_row = dict(parsed.row)
+        self.assertNotIn("interaction_total", raw_row)
+        self.assertNotIn("thread_weight", raw_row)
+        self.assertNotIn("like_weight", raw_row)
+        self.assertNotIn("share_weight", raw_row)
+        self.assertNotIn("value", raw_row)
 
-        report_row = apply_report_formulas(to_report_row(1, raw_row, auth_mode="public", platform="THREADS"))
+        report_row = to_report_row(1, raw_row, auth_mode="public", platform="THREADS")
         self.assertEqual(report_row["FB"], "Threads > @alice")
         self.assertEqual(report_row["分享"], 7)
-        self.assertEqual(report_row["互動總次數"], 37950)
-        self.assertEqual(report_row["VALUE"], 189750)
         self.assertEqual(report_row["reach_status"], "public_unavailable")
+        self.assertNotIn("互動總次數", report_row)
+        self.assertNotIn("VALUE", report_row)
+        self.assertNotIn("interaction_total", FIELDNAMES)
+        self.assertNotIn("thread_weight", FIELDNAMES)
+        self.assertNotIn("like_weight", FIELDNAMES)
+        self.assertNotIn("share_weight", FIELDNAMES)
+        self.assertNotIn("value", FIELDNAMES)
         self.assertNotIn("VALUE", REPORT_FIELDNAMES)
         self.assertNotIn("status", REPORT_FIELDNAMES)
         self.assertNotIn("reach_status", REPORT_FIELDNAMES)
@@ -386,15 +390,8 @@ class ExporterAndMainHelperTests(unittest.TestCase):
                     "瀏覽數": "N/A",
                     "分享": 3,
                     "網址": "https://www.threads.com/@alice/post/ABC123",
-                    "討論串加權(*45)": 45,
-                    "讚數加權(*30)": 60,
-                    "分享加權(*60)": 180,
-                    "互動總次數": 285,
-                    "互動次數單價": 5,
                     "粉絲團追蹤人數": "N/A",
                     "觸及": "N/A",
-                    "觸及單價": 2.5,
-                    "VALUE": 1425,
                     "status": "success",
                     "reach_status": "public_unavailable",
                 },
@@ -409,6 +406,10 @@ class ExporterAndMainHelperTests(unittest.TestCase):
             header,
             ["網址", "fb標題", "討論串總則數", "點閱數/按讚數", "瀏覽數", "分享", "粉絲團追蹤人數", "觸及"],
         )
+        self.assertNotIn("討論串加權(*45)", header)
+        self.assertNotIn("讚數加權(*30)", header)
+        self.assertNotIn("分享加權(*60)", header)
+        self.assertNotIn("互動總次數", header)
         self.assertNotIn("VALUE", header)
         self.assertNotIn("status", header)
         self.assertNotIn("reach_status", header)

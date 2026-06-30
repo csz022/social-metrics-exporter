@@ -18,11 +18,6 @@ FIELDNAMES = [
     "view_count",
     "reach",
     "follower_count",
-    "interaction_total",
-    "thread_weight",
-    "like_weight",
-    "share_weight",
-    "value",
     "status",
 ]
 

@@ -1,25 +1,25 @@
 # Social Metrics Exporter
 
-本機執行的社群貼文成效匯出工具。支援 URL list、Google Sheet、xlsx 上傳，使用 Playwright 開啟使用者可見的公開或已登入頁面，輸出可回填的 CSV。
+Local social post metrics exporter for Threads, Instagram, and Facebook. The tool accepts URL lists, Google Sheets, or local xlsx files, opens visible public or authenticated pages with Playwright, and writes a normalized CSV report.
 
-這份 README 給安裝、部署、維護使用。
+The exporter only writes scraped fields. It does not calculate campaign value, weighted engagement, unit price, or other business formulas.
 
 ## Requirements
 
 - Python 3.11+
-- `uv`，推薦
+- `uv` recommended
 - Playwright Chromium
 
-## Install
+## Installation
 
-推薦：
+Recommended setup:
 
 ```bash
 uv sync
 uv run playwright install chromium
 ```
 
-不用 `uv` 時可改用 pip：
+Alternative pip setup:
 
 ```bash
 python3 -m venv .venv
@@ -30,34 +30,36 @@ python -m playwright install chromium
 
 ## Run
 
-GUI：
+GUI:
 
 ```bash
 uv run python gui_app.py --port 5001
 ```
 
-CLI：
+CLI:
 
 ```bash
 uv run python src/main.py --input input/urls.txt
 ```
 
-啟動腳本：
+Platform launchers:
 
-- macOS：`run_gui_mac.command`
-- Windows：`run_gui.bat`
+- macOS: `run_gui_mac.command`
+- Windows: `run_gui.bat`
 
-這兩個腳本會建立 `.env`、同步依賴、安裝 Chromium，然後開啟 `http://127.0.0.1:5001`。
+The launchers prepare dependencies, install Chromium, and open `http://127.0.0.1:5001`.
 
 ## Input
 
 ### URL list
 
-`input/urls.txt` 每行一個 URL，空行和 `#` 註解會略過。這個檔案是本機資料，已被 `.gitignore` 排除；初始化時可以從範本複製：
+Create an input file from the example:
 
 ```bash
 cp input/urls.example.txt input/urls.txt
 ```
+
+Use one URL per line. Blank lines and lines starting with `#` are ignored.
 
 ```text
 https://www.threads.com/@example/post/POST_ID
@@ -65,20 +67,20 @@ https://www.threads.com/@example/post/POST_ID
 
 ### Google Sheet / xlsx
 
-Sheet 至少需要：
+Required columns:
 
 - `文章標題`
 - `來源`
 
-URL 可以放在：
+URL detection:
 
-- `文章標題` 的 hyperlink
-- `網址` 欄
-- 其他欄位中的社群 URL，fallback scan 會嘗試尋找
+- hyperlink on `文章標題`
+- `網址` column
+- supported social URL in another cell, found through fallback scanning
 
-支援平台值包含 `THREADS`、`IG`、`FACEBOOK`，也會辨識常見中文名稱如 `串文`、`臉書`。
+Supported platform values include `THREADS`, `IG`, and `FACEBOOK`. Common Chinese labels such as `串文` and `臉書` are normalized automatically.
 
-CLI 範例：
+CLI examples:
 
 ```bash
 uv run python src/main.py --sheet "https://docs.google.com/spreadsheets/d/.../edit?gid=..." --sheet-platforms ALL
@@ -88,68 +90,68 @@ uv run python src/main.py --sheet local_file.xlsx --dry-run
 
 ## Output
 
-主報表：
+Report CSV:
 
 ```text
 output/social_metrics.csv
 ```
 
-欄位：
+Columns:
 
 ```text
 網址,fb標題,討論串總則數,點閱數/按讚數,瀏覽數,分享,粉絲團追蹤人數,觸及
 ```
 
-欄位來源：
+Column mapping:
 
-| 欄位 | 來源 |
+| Column | Source |
 | --- | --- |
-| 網址 | 輸入 URL |
-| fb標題 | 貼文文字，方便回填核對 |
+| 網址 | input URL |
+| fb標題 | post text for row matching |
 | 討論串總則數 | 回覆數 |
 | 點閱數/按讚數 | 按讚數 |
-| 瀏覽數 | 頁面有顯示才抓，否則 `N/A` |
+| 瀏覽數 | captured when visible on the page, otherwise `N/A` |
 | 分享 | 轉發數 + 引用數 |
-| 粉絲團追蹤人數 | IG / Facebook profile followers；Threads 預設不補，填 `N/A` |
-| 觸及 | 目前通常抓不到，填 `N/A` |
+| 粉絲團追蹤人數 | IG / Facebook profile followers; Threads is `N/A` |
+| 觸及 | `N/A` unless a visible reach value is available |
 
-失敗清單：
+Failed URL CSV:
 
 ```text
 output/failed_urls.csv
 ```
 
-欄位：
+Columns:
 
 ```text
 post_url,status,reason
 ```
 
-常見 status：
+Common statuses:
 
-| status | 意義 |
+| status | Meaning |
 | --- | --- |
-| `post_not_loaded` | 貼文 URL 被導回 profile、貼文不存在、私人權限，或公開模式看不到 |
-| `login_required` | 頁面要求登入 |
-| `not_found` | 頁面不存在 |
-| `timeout` | 載入逾時 |
-| `parse_failed` | 頁面載入但解析訊號不足 |
+| `post_not_loaded` | post URL redirected to profile, post is unavailable, permission is missing, or public mode cannot load it |
+| `login_required` | page requires login |
+| `not_found` | page does not exist |
+| `timeout` | page load timed out |
+| `parse_failed` | page loaded but did not contain enough parseable signals |
 
 ## Login
 
-公開模式抓不到時，可先建立本機登入狀態：
+When public mode cannot load a page, create a local browser session state:
 
 ```bash
 uv run python src/main.py --login
 ```
 
-瀏覽器打開後登入 Threads / Instagram，回到 terminal 按 Enter。之後 GUI 勾選 `Use saved login/session`。
+After the browser opens, log in to the required platform and return to the terminal to press Enter. In the GUI, enable `Use saved login/session`.
 
-登入資料存在 `.auth/`，不要提交或傳給別人。
+Session files are stored under `.auth/`.
 
 ## Config
 
-`.env` 是本機設定，`.env.example` 是範本。常用設定：
+`.env` contains local runtime settings. `.env.example` documents the supported keys.
 
 ```env
 THREADS_INPUT=input/urls.txt
@@ -169,24 +171,24 @@ THREADS_AUTH_STATE=.auth/threads_state.json
 THREADS_PROFILE_DIR=.auth/threads_profile
 ```
 
-## Test
+## Testing
 
-快速測試：
+Run the test suite:
 
 ```bash
 uv run python -m unittest discover -v
 ```
 
-檢查輸入但不爬資料：
+Validate input parsing without scraping:
 
 ```bash
 uv run python src/main.py --dry-run
 uv run python src/main.py --sheet local_file.xlsx --dry-run
 ```
 
-## Repo Hygiene
+## Repository Hygiene
 
-不要提交：
+The repository should not include local runtime state or generated output:
 
 ```text
 .env
@@ -198,10 +200,6 @@ output/
 tmp_*/
 ```
 
-這些已在 `.gitignore` 中排除。
+## Operational Notes
 
-## Public Repo Notes
-
-這個 repo 可以公開的是程式碼、文件、測試和範例資料。不要公開 `.env`、登入 session、真實客戶/專案輸入 URL、CSV 輸出、debug HTML/network dump。
-
-使用時只抓自己有權限查看的公開或已授權頁面，不要繞過登入、隱私設定、平台限制或大量高頻請求。平台條款可能限制自動化抓取；公開程式碼本身和實際使用行為要分開評估。
+Use the exporter only for pages the operator is allowed to view. Do not commit credentials, session state, real project inputs, generated CSVs, debug HTML, or captured network payloads.
