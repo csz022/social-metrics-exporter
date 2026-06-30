@@ -163,6 +163,86 @@ class ThreadsParserTests(unittest.TestCase):
         self.assertEqual(parsed.row["quote_count"], 7)
         self.assertEqual(parsed.row["view_count"], 16000)
 
+    def test_threads_post_metrics_ignore_related_thread_json(self) -> None:
+        post_url = "https://www.threads.com/@ke_song_tw/post/DaNC74PlEoV"
+        html = '<html><head><meta property="og:url" content="https://www.threads.com/@ke_song_tw/post/DaNC74PlEoV"></head></html>'
+        visible_text = """
+        串文
+        144次瀏覽
+        ke_song_tw
+        1小時
+        2026世界盃開吃計畫🔥
+        翻譯
+        相關串文
+        ke_song_tw
+        3天
+        Related post text.
+        翻譯
+        12
+        6
+        4
+        2
+        """
+
+        parsed = parse_threads_page(
+            post_url,
+            html,
+            visible_text,
+            [
+                {"shortcode": "DaNC74PlEoV"},
+                {
+                    "shortcode": "RELATED123",
+                    "like_count": 99,
+                    "text_post_app_info": {
+                        "direct_reply_count": 8,
+                        "repost_count": 7,
+                        "quote_count": 6,
+                    },
+                },
+            ],
+        )
+
+        self.assertEqual(parsed.status, STATUS_SUCCESS)
+        self.assertEqual(parsed.row["like_count"], 0)
+        self.assertEqual(parsed.row["reply_count"], 0)
+        self.assertEqual(parsed.row["repost_count"], 0)
+        self.assertEqual(parsed.row["quote_count"], 0)
+        self.assertEqual(parsed.row["view_count"], 144)
+
+    def test_threads_post_metrics_use_matching_post_json(self) -> None:
+        post_url = "https://www.threads.com/@alice/post/TARGET123"
+        html = '<html><head><meta property="og:url" content="https://www.threads.com/@alice/post/TARGET123"></head></html>'
+        visible_text = """
+        alice
+        1天
+        Target post.
+        Translate
+        """
+
+        parsed = parse_threads_page(
+            post_url,
+            html,
+            visible_text,
+            [
+                {"shortcode": "RELATED123", "like_count": 99},
+                {
+                    "shortcode": "TARGET123",
+                    "like_count": 7,
+                    "text_post_app_info": {
+                        "direct_reply_count": 2,
+                        "repost_count": 1,
+                        "quote_count": 0,
+                    },
+                },
+            ],
+        )
+
+        self.assertEqual(parsed.status, STATUS_SUCCESS)
+        self.assertEqual(parsed.row["like_count"], 7)
+        self.assertEqual(parsed.row["reply_count"], 2)
+        self.assertEqual(parsed.row["repost_count"], 1)
+        self.assertEqual(parsed.row["quote_count"], 0)
+
     def test_threads_ignores_incomplete_visible_metric_group_from_image_ocr(self) -> None:
         post_url = "https://www.threads.com/@example/post/OCR123"
         html = '<html><head><meta property="og:url" content="https://www.threads.com/@example/post/OCR123"></head></html>'

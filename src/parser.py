@@ -99,7 +99,7 @@ def parse_threads_page(
         row["created_at"] = visible_post["created_at"]
 
     for field, patterns in COUNT_PATTERNS.items():
-        parsed = _extract_count(field, patterns, normalized_text, json_blobs)
+        parsed = _extract_count(field, patterns, normalized_text, json_blobs, post_url)
         if parsed is not None:
             row[field] = parsed
     for field, value in _extract_visible_metrics(normalized_text, str(row["username"])).items():
@@ -214,6 +214,8 @@ def _extract_visible_metrics(text: str, username: str) -> dict[str, int]:
                 continue
             if not saw_translation_marker:
                 continue
+            if _is_related_threads_boundary(metric_line):
+                break
             if not _is_metric_line(metric_line):
                 if metrics:
                     break
@@ -242,6 +244,11 @@ def _extract_visible_metrics(text: str, username: str) -> dict[str, int]:
             result["view_count"] = view_count
         return result
     return {}
+
+
+def _is_related_threads_boundary(value: str) -> bool:
+    normalized = value.strip().lower()
+    return normalized in {"相關串文", "related threads", "related posts"}
 
 
 def _visible_date_index(lines: list[str], username_index: int) -> int | None:
@@ -355,7 +362,17 @@ def _extract_created_at(soup: BeautifulSoup, json_blobs: list[Any]) -> str:
     return "N/A"
 
 
-def _extract_count(field: str, patterns: list[str], text: str, json_blobs: list[Any]) -> int | None:
+def _extract_count(
+    field: str,
+    patterns: list[str],
+    text: str,
+    json_blobs: list[Any],
+    post_url: str = "",
+) -> int | None:
+    post_id = _extract_post_id(post_url)
+    if post_id:
+        return _extract_target_json_count(field, post_id, json_blobs)
+
     json_count = _extract_json_count(field, json_blobs)
     if json_count is not None:
         return json_count
@@ -368,13 +385,7 @@ def _extract_count(field: str, patterns: list[str], text: str, json_blobs: list[
 
 
 def _extract_json_count(field: str, json_blobs: list[Any]) -> int | None:
-    key_hints = {
-        "like_count": ("like_count", "likeCount", "likes_count", "likesCount"),
-        "reply_count": ("reply_count", "replyCount", "replies_count", "comment_count", "commentCount"),
-        "repost_count": ("repost_count", "repostCount", "reshare_count", "share_count", "shareCount"),
-        "quote_count": ("quote_count", "quoteCount", "quote_count"),
-        "view_count": ("view_count", "viewCount", "play_count", "impression_count"),
-    }
+    key_hints = _json_count_key_hints()
     for obj in _walk_json_objects(json_blobs):
         for key in key_hints[field]:
             value = obj.get(key)
@@ -383,6 +394,45 @@ def _extract_json_count(field: str, json_blobs: list[Any]) -> int | None:
                 if parsed is not None:
                     return parsed
     return None
+
+
+def _extract_target_json_count(field: str, post_id: str, json_blobs: list[Any]) -> int | None:
+    key_hints = _json_count_key_hints()
+    for obj in _walk_json_objects(json_blobs):
+        if not _json_object_matches_post_id(obj, post_id):
+            continue
+        for scoped_obj in _walk_json_objects([obj]):
+            for key in key_hints[field]:
+                value = scoped_obj.get(key)
+                if isinstance(value, (int, float, str)):
+                    parsed = _parse_human_count(value)
+                    if parsed is not None:
+                        return parsed
+    return None
+
+
+def _json_count_key_hints() -> dict[str, tuple[str, ...]]:
+    return {
+        "like_count": ("like_count", "likeCount", "likes_count", "likesCount"),
+        "reply_count": ("direct_reply_count", "reply_count", "replyCount", "replies_count", "comment_count", "commentCount"),
+        "repost_count": ("repost_count", "repostCount", "reshare_count", "share_count", "shareCount"),
+        "quote_count": ("quote_count", "quoteCount"),
+        "view_count": ("view_count", "viewCount", "play_count", "impression_count"),
+    }
+
+
+def _json_object_matches_post_id(obj: dict[str, Any], post_id: str) -> bool:
+    for key in ("code", "shortcode", "pk", "id"):
+        value = obj.get(key)
+        if isinstance(value, str) and value == post_id:
+            return True
+
+    for key in ("url", "permalink", "canonical_url", "share_url"):
+        value = obj.get(key)
+        if isinstance(value, str) and f"/post/{post_id}" in value:
+            return True
+
+    return False
 
 
 def _extract_json_blobs(soup: BeautifulSoup) -> list[Any]:
