@@ -163,6 +163,29 @@ class ThreadsParserTests(unittest.TestCase):
         self.assertEqual(parsed.row["quote_count"], 7)
         self.assertEqual(parsed.row["view_count"], 16000)
 
+    def test_threads_ignores_incomplete_visible_metric_group_from_image_ocr(self) -> None:
+        post_url = "https://www.threads.com/@example/post/OCR123"
+        html = '<html><head><meta property="og:url" content="https://www.threads.com/@example/post/OCR123"></head></html>'
+        visible_text = """
+        example
+        1天
+        Image post with numeric text.
+        翻譯
+        5
+        1
+        儲存
+        另存新檔
+        分享
+        """
+
+        parsed = parse_threads_page(post_url, html, visible_text)
+
+        self.assertEqual(parsed.status, STATUS_SUCCESS)
+        self.assertEqual(parsed.row["like_count"], 0)
+        self.assertEqual(parsed.row["reply_count"], 0)
+        self.assertEqual(parsed.row["repost_count"], 0)
+        self.assertEqual(parsed.row["quote_count"], 0)
+
 
 class SocialParserTests(unittest.TestCase):
     def test_parse_instagram_and_facebook_public_pages(self) -> None:
@@ -202,6 +225,33 @@ class SocialParserTests(unittest.TestCase):
         self.assertEqual(fb_row["like_count"], 88)
         self.assertEqual(fb_row["reply_count"], 7)
         self.assertEqual(fb_row["repost_count"], 3)
+
+    def test_parse_facebook_reel_rail_metrics_from_bare_counts(self) -> None:
+        fb_row = parse_social_page(
+            "FACEBOOK",
+            "https://www.facebook.com/reel/123",
+            """
+            <html><head>
+              <meta property="og:title" content="Example Page">
+              <meta property="og:description" content="Campaign reel">
+            </head><body></body></html>
+            """,
+            """
+            Campaign reel
+            5
+            1
+            9
+            儲存
+            另存新檔
+            分享
+            傳送至Keep筆記
+            """,
+        )
+
+        self.assertEqual(fb_row["status"], "success")
+        self.assertEqual(fb_row["like_count"], 5)
+        self.assertEqual(fb_row["reply_count"], 1)
+        self.assertEqual(fb_row["repost_count"], 9)
 
     def test_profile_follower_count_from_text_and_json(self) -> None:
         self.assertEqual(parse_profile_follower_count("IG", "", "1.2萬 followers"), 12000)

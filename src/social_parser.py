@@ -43,6 +43,10 @@ def parse_social_page(platform: str, post_url: str, html: str, visible_text: str
         row["reply_count"] = _first_not_none(dom_metrics.get("reply_count"), _first_count(counts_text, COMMENT_PATTERNS), _json_count(network_json_blobs or [], COMMENT_KEYS), 0)
         row["repost_count"] = _first_not_none(dom_metrics.get("repost_count"), _first_count(counts_text, SHARE_PATTERNS), _json_count(network_json_blobs or [], SHARE_KEYS), 0)
         row["view_count"] = _first_not_none(dom_metrics.get("view_count"), _first_count(counts_text, VIEW_PATTERNS), _json_count(network_json_blobs or [], VIEW_KEYS), "N/A")
+        reel_metrics = _extract_facebook_reel_rail_metrics(post_url, normalized_text)
+        for field, value in reel_metrics.items():
+            if row.get(field) in (None, 0, "N/A"):
+                row[field] = value
 
     has_signal = row["text"] != "N/A" or any(row[field] for field in ("like_count", "reply_count", "repost_count", "quote_count"))
     row["status"] = STATUS_SUCCESS if has_signal else STATUS_PARSE_FAILED
@@ -89,6 +93,8 @@ FB_REACTION_KEYS = ("reaction_count", "reactionCount", "like_count", "likeCount"
 COMMENT_KEYS = ("comment_count", "commentCount", "comments_count", "edge_media_to_comment")
 SHARE_KEYS = ("share_count", "shareCount", "reshare_count")
 VIEW_KEYS = ("view_count", "viewCount", "play_count", "playCount", "video_view_count", "videoViewCount")
+
+FB_REEL_URL_MARKERS = ("/reel/", "/reels/", "/watch/", "fb.watch/")
 
 
 def _looks_not_found(text: str) -> bool:
@@ -185,6 +191,46 @@ def _extract_metric_from_dom_nodes(root, field: str, patterns: tuple[str, ...]) 
     if best_value is None:
         return {}
     return {field: best_value}
+
+
+def _extract_facebook_reel_rail_metrics(post_url: str, text: str) -> dict[str, int]:
+    if not _looks_like_facebook_reel(post_url, text):
+        return {}
+
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    numeric_runs: list[list[int]] = []
+    current: list[int] = []
+    for line in lines:
+        if _is_bare_count_line(line):
+            parsed = _parse_human_count(line)
+            if parsed is not None:
+                current.append(parsed)
+            continue
+        if current:
+            numeric_runs.append(current)
+            current = []
+    if current:
+        numeric_runs.append(current)
+
+    rail = max((run for run in numeric_runs if 2 <= len(run) <= 4), key=len, default=[])
+    if len(rail) < 2:
+        return {}
+
+    result = {"like_count": rail[0], "reply_count": rail[1]}
+    if len(rail) >= 3:
+        result["repost_count"] = rail[2]
+    return result
+
+
+def _looks_like_facebook_reel(post_url: str, text: str) -> bool:
+    lowered_url = post_url.lower()
+    if any(marker in lowered_url for marker in FB_REEL_URL_MARKERS):
+        return True
+    return any(marker in text for marker in ("傳送至Keep筆記", "儲存", "另存新檔")) and "分享" in text
+
+
+def _is_bare_count_line(line: str) -> bool:
+    return bool(re.fullmatch(r"\d+(?:[,.]\d+)?\s*[萬万千KkMm]?", line.replace("\xa0", " ")))
 
 
 def _iter_candidate_nodes(root):

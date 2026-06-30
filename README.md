@@ -108,10 +108,10 @@ Column mapping:
 | --- | --- |
 | 網址 | input URL |
 | fb標題 | post text for row matching |
-| 討論串總則數 | 回覆數 |
-| 點閱數/按讚數 | 按讚數 |
+| 討論串總則數 | Threads replies; Facebook / Instagram comments |
+| 點閱數/按讚數 | Threads likes; Facebook reactions/likes; Instagram likes |
 | 瀏覽數 | captured when visible on the page, otherwise `N/A` |
-| 分享 | 轉發數 + 引用數 |
+| 分享 | Threads reposts + quotes; Facebook shares; Instagram is `0` |
 | 粉絲團追蹤人數 | IG / Facebook profile followers; Threads is `N/A` |
 | 觸及 | `N/A` unless a visible reach value is available |
 

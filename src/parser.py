@@ -224,6 +224,9 @@ def _extract_visible_metrics(text: str, username: str) -> dict[str, int]:
             if len(metrics) >= 4:
                 break
 
+        if len(metrics) < 4:
+            metrics = []
+
         result: dict[str, int] = {}
         if len(metrics) >= 1:
             result["like_count"] = metrics[0]
