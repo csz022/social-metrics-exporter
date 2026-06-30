@@ -67,6 +67,7 @@ class Job:
     failed_output_path: str = ""
     workdir: str = ""
     error: str = ""
+    form_defaults: dict[str, Any] = field(default_factory=dict)
 
     @property
     def elapsed_seconds(self) -> float:
@@ -886,6 +887,51 @@ def build_form_defaults() -> dict[str, Any]:
     }
 
 
+def build_submitted_form_defaults(
+    *,
+    source_mode: str,
+    sheet: str,
+    urls: str,
+    sheet_platforms: str,
+    output_dir: str,
+    output_name: str,
+    failed_output_name: str,
+    concurrency: str,
+    delay: str,
+    retries: str,
+    profile_search_scrolls: str,
+    use_login: bool,
+    profile_dir: str,
+    auth_state: str,
+) -> dict[str, Any]:
+    defaults = build_form_defaults()
+    defaults.update(
+        {
+            "source_mode": source_mode,
+            "sheet": sheet,
+            "urls": urls,
+            "sheet_platforms": sheet_platforms,
+            "output_dir": output_dir,
+            "output_name": output_name,
+            "failed_output_name": failed_output_name,
+            "concurrency": concurrency,
+            "delay": delay,
+            "retries": retries,
+            "profile_search_scrolls": profile_search_scrolls,
+            "dry_run": bool(request.form.get("dry_run")),
+            "fetch_followers": bool(request.form.get("fetch_followers")),
+            "profile_search": bool(request.form.get("profile_search")),
+            "network_capture": bool(request.form.get("network_capture")),
+            "debug": bool(request.form.get("debug")),
+            "headful": bool(request.form.get("headful")),
+            "use_login": use_login,
+            "profile_dir": profile_dir or DEFAULT_PROFILE_DIR,
+            "auth_state": auth_state or DEFAULT_AUTH_STATE,
+        }
+    )
+    return defaults
+
+
 def make_log_text(job: Job | None) -> str:
     if not job:
         return "Waiting for a job..."
@@ -1063,11 +1109,12 @@ def _preview_url_text(urls_text: str, platforms: set[str]) -> dict[str, object]:
 @app.route("/")
 def index() -> str:
     active_job = get_active_job()
+    form_defaults = active_job.form_defaults if active_job and active_job.form_defaults else build_form_defaults()
     return render_template_string(
         PAGE_TEMPLATE,
         active_job=active_job,
         log_text=make_log_text(active_job),
-        form_defaults=build_form_defaults(),
+        form_defaults=form_defaults,
         mode_label=active_job.status if active_job else "idle",
     )
 
@@ -1119,6 +1166,7 @@ def start_job() -> Response:
         return Response("A job is already running.", status=409)
 
     source_mode = (request.form.get("source_mode") or "sheet").strip().lower()
+    submitted_source_mode = source_mode
     job_id = create_job_id()
     job_dir = ensure_job_root(job_id)
     job = Job(job_id=job_id)
@@ -1140,6 +1188,8 @@ def start_job() -> Response:
     use_login = bool(request.form.get("use_login"))
     profile_dir = (request.form.get("profile_dir") or DEFAULT_PROFILE_DIR).strip() if use_login else ""
     auth_state = (request.form.get("auth_state") or DEFAULT_AUTH_STATE).strip() if use_login else ""
+    sheet_url = (request.form.get("sheet") or DEFAULT_SHEET).strip()
+    urls_text = (request.form.get("urls") or "").strip()
 
     common_flags = [
         ("--output", output_path),
@@ -1169,7 +1219,6 @@ def start_job() -> Response:
         common_flags.extend([("--auth-state", auth_state)])
 
     if source_mode == "sheet":
-        sheet_url = (request.form.get("sheet") or DEFAULT_SHEET).strip()
         if not sheet_url:
             return Response("Missing Google Sheet URL.", status=400)
         cmd.extend(["--sheet", sheet_url, "--sheet-platforms", sheet_platforms])
@@ -1181,7 +1230,6 @@ def start_job() -> Response:
         uploaded.save(xlsx_path)
         cmd.extend(["--sheet", str(xlsx_path), "--sheet-platforms", sheet_platforms])
     else:
-        urls_text = (request.form.get("urls") or "").strip()
         uploaded = request.files.get("urls_file")
         if uploaded and uploaded.filename:
             urls_text = "\n".join([urls_text, uploaded.read().decode("utf-8")]).strip()
@@ -1202,6 +1250,22 @@ def start_job() -> Response:
     job.command = cmd
     job.output_path = output_path
     job.failed_output_path = failed_output_path
+    job.form_defaults = build_submitted_form_defaults(
+        source_mode=submitted_source_mode,
+        sheet=sheet_url,
+        urls=urls_text if submitted_source_mode == "urls" else "",
+        sheet_platforms=sheet_platforms,
+        output_dir=output_dir,
+        output_name=output_name,
+        failed_output_name=failed_output_name,
+        concurrency=concurrency,
+        delay=delay,
+        retries=retries,
+        profile_search_scrolls=profile_search_scrolls,
+        use_login=use_login,
+        profile_dir=profile_dir,
+        auth_state=auth_state,
+    )
 
     env = os.environ.copy()
     env["THREADS_RESUME"] = "false"
@@ -1230,11 +1294,12 @@ def start_job() -> Response:
 @app.route("/job/<job_id>")
 def job_view(job_id: str) -> str:
     job = jobs.get(job_id)
+    form_defaults = job.form_defaults if job and job.form_defaults else build_form_defaults()
     return render_template_string(
         PAGE_TEMPLATE,
         active_job=job,
         log_text=make_log_text(job),
-        form_defaults=build_form_defaults(),
+        form_defaults=form_defaults,
         mode_label=job.status if job else "idle",
     )
 

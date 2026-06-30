@@ -669,6 +669,51 @@ class GuiPreviewTests(unittest.TestCase):
         self.assertIn("Google Sheet URL detected", payload["columns"])
         mocked.assert_called_once()
 
+    def test_gui_job_view_preserves_submitted_form_values(self) -> None:
+        import gui_app  # noqa: WPS433
+
+        class FakeThread:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                pass
+
+        gui_app.jobs.clear()
+        try:
+            client = gui_app.app.test_client()
+            with patch.object(gui_app.threading, "Thread", FakeThread):
+                response = client.post(
+                    "/start",
+                    data={
+                        "source_mode": "urls",
+                        "urls": "https://www.instagram.com/p/IG123/",
+                        "sheet_platforms": "IG",
+                        "output_name": "custom_metrics.csv",
+                        "failed_output_name": "custom_failed.csv",
+                        "concurrency": "2",
+                        "delay": "0",
+                        "retries": "0",
+                        "profile_search_scrolls": "7",
+                        "dry_run": "on",
+                        "network_capture": "on",
+                    },
+                )
+
+            self.assertEqual(response.status_code, 302)
+            location = response.headers["Location"]
+            job_page = client.get(location)
+            html = job_page.get_data(as_text=True)
+
+            self.assertIn('value="custom_metrics.csv"', html)
+            self.assertIn('value="custom_failed.csv"', html)
+            self.assertIn("https://www.instagram.com/p/IG123/", html)
+            self.assertIn('<option value="IG" selected>IG</option>', html)
+            self.assertIn('name="dry_run" checked', html)
+            self.assertIn('name="network_capture" checked', html)
+        finally:
+            gui_app.jobs.clear()
+
 
 if __name__ == "__main__":
     unittest.main()
