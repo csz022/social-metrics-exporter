@@ -2,13 +2,13 @@
 
 本機執行的社群貼文成效匯出工具。支援 URL list、Google Sheet、xlsx 上傳，使用 Playwright 開啟使用者可見的公開或已登入頁面，輸出可回填的 CSV。
 
-這份 README 給安裝、部署、維護使用；非工程使用者可以直接用 `run_gui_mac.command` 或 `run_gui.bat` 啟動 GUI。
+這份 README 給安裝、部署、維護使用。
 
 ## Requirements
 
 - Python 3.11+
 - `uv`，推薦
-- Playwright Chromium，啟動腳本或安裝指令會自動安裝
+- Playwright Chromium
 
 ## Install
 
@@ -42,18 +42,18 @@ CLI：
 uv run python src/main.py --input input/urls.txt
 ```
 
-給使用者的啟動腳本：
+啟動腳本：
 
 - macOS：`run_gui_mac.command`
 - Windows：`run_gui.bat`
 
-這兩個腳本會自動建立 `.env`、同步依賴、安裝 Chromium，然後開啟 `http://127.0.0.1:5001`。
+這兩個腳本會建立 `.env`、同步依賴、安裝 Chromium，然後開啟 `http://127.0.0.1:5001`。
 
 ## Input
 
 ### URL list
 
-`input/urls.txt` 每行一個 URL，空行和 `#` 註解會略過。這個檔案是本機資料，已被 `.gitignore` 排除；第一次使用可以從範本複製：
+`input/urls.txt` 每行一個 URL，空行和 `#` 註解會略過。這個檔案是本機資料，已被 `.gitignore` 排除；初始化時可以從範本複製：
 
 ```bash
 cp input/urls.example.txt input/urls.txt
