@@ -226,6 +226,8 @@ def _looks_like_facebook_reel(post_url: str, text: str) -> bool:
     lowered_url = post_url.lower()
     if any(marker in lowered_url for marker in FB_REEL_URL_MARKERS):
         return True
+    if any(line.strip().lower() == "reel" for line in text.splitlines()):
+        return True
     return any(marker in text for marker in ("傳送至Keep筆記", "儲存", "另存新檔")) and "分享" in text
 
 
