@@ -179,12 +179,14 @@ Run the test suite:
 uv run python -m unittest discover -v
 ```
 
-Validate input parsing without scraping:
+Check input only:
 
 ```bash
 uv run python src/main.py --dry-run
 uv run python src/main.py --sheet local_file.xlsx --dry-run
 ```
+
+`--dry-run` reads the configured input and prints the detected URLs, platforms, and sheet columns. It does not open Playwright or scrape pages.
 
 ## Repository Hygiene
 
@@ -199,7 +201,3 @@ input/urls.txt
 output/
 tmp_*/
 ```
-
-## Operational Notes
-
-Use the exporter only for pages the operator is allowed to view. Do not commit credentials, session state, real project inputs, generated CSVs, debug HTML, or captured network payloads.
