@@ -572,6 +572,33 @@ class ExporterAndMainHelperTests(unittest.TestCase):
         self.assertEqual(threads_report["分享"], 7)
         self.assertEqual(facebook_report["分享"], 7)
 
+    def test_failed_report_rows_use_na_for_manual_backfill(self) -> None:
+        row = {
+            "post_url": "https://www.facebook.com/101615286547831_1339595465054527",
+            "username": "麥當勞",
+            "text": "Sheet title",
+            "created_at": "2026-06-30",
+            "like_count": 0,
+            "reply_count": 0,
+            "repost_count": 0,
+            "quote_count": 0,
+            "view_count": "N/A",
+            "follower_count": "N/A",
+            "reach": "N/A",
+            "status": "not_found",
+        }
+
+        report = to_report_row(1, row, auth_mode="public", platform="FACEBOOK")
+
+        self.assertEqual(report["網址"], row["post_url"])
+        self.assertEqual(report["fb標題"], "Sheet title")
+        self.assertEqual(report["討論串總則數"], "N/A")
+        self.assertEqual(report["點閱數/按讚數"], "N/A")
+        self.assertEqual(report["瀏覽數"], "N/A")
+        self.assertEqual(report["分享"], "N/A")
+        self.assertEqual(report["粉絲團追蹤人數"], "N/A")
+        self.assertEqual(report["觸及"], "N/A")
+
     def test_social_follower_enrichment_retries_missing_facebook_cache(self) -> None:
         class FakeScraper:
             def scrape_many(self, urls):

@@ -355,7 +355,20 @@ def platform_from_url(url: str) -> str:
 def to_report_row(index: int, row: dict[str, object], *, auth_mode: str, platform: str = "THREADS") -> dict[str, object]:
     username = str(row.get("username") or "N/A")
     title = str(row.get("text") or "N/A")
+    is_success = row.get("status") == "success"
     share_count = 0 if platform.upper() == "IG" else int(row.get("repost_count") or 0) + int(row.get("quote_count") or 0)
+    if is_success:
+        reply_value = row.get("reply_count") or 0
+        like_value = row.get("like_count") or 0
+        view_value = row.get("view_count") or "N/A"
+        share_value = share_count
+        follower_value = (row.get("follower_count") or "N/A") if platform.upper() in {"IG", "FACEBOOK"} else "N/A"
+    else:
+        reply_value = "N/A"
+        like_value = "N/A"
+        view_value = "N/A"
+        share_value = "N/A"
+        follower_value = "N/A"
     platform_label = {"THREADS": "Threads", "IG": "Instagram", "FACEBOOK": "Facebook"}.get(platform.upper(), platform)
 
     reach = row.get("reach") or "N/A"
@@ -378,12 +391,12 @@ def to_report_row(index: int, row: dict[str, object], *, auth_mode: str, platfor
         "網站": platform_label,
         "頻道": username,
         "fb標題_2": title,
-        "討論串總則數": row.get("reply_count") or 0,
-        "點閱數/按讚數": row.get("like_count") or 0,
-        "瀏覽數": row.get("view_count") or "N/A",
-        "分享": share_count,
+        "討論串總則數": reply_value,
+        "點閱數/按讚數": like_value,
+        "瀏覽數": view_value,
+        "分享": share_value,
         "網址": row.get("post_url") or "",
-        "粉絲團追蹤人數": (row.get("follower_count") or "N/A") if platform.upper() in {"IG", "FACEBOOK"} else "N/A",
+        "粉絲團追蹤人數": follower_value,
         "觸及": reach,
         "status": row.get("status") or "",
         "reach_status": reach_status,
