@@ -179,15 +179,6 @@ Run the test suite:
 uv run python -m unittest discover -v
 ```
 
-Check input only:
-
-```bash
-uv run python src/main.py --dry-run
-uv run python src/main.py --sheet local_file.xlsx --dry-run
-```
-
-`--dry-run` reads the configured input and prints the detected URLs, platforms, and sheet columns. It does not open Playwright or scrape pages.
-
 ## Repository Hygiene
 
 The repository should not include local runtime state or generated output:
