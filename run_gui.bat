@@ -33,6 +33,5 @@ if errorlevel 1 (
 
 if "%GUI_PORT%"=="" set GUI_PORT=5001
 echo Starting Social Metrics at http://127.0.0.1:%GUI_PORT%
-start "" http://127.0.0.1:%GUI_PORT%
 uv run python gui_app.py --port %GUI_PORT% --open-browser
 pause

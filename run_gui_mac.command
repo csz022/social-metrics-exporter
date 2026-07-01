@@ -24,7 +24,6 @@ uv run python -m playwright install chromium
 
 PORT="${GUI_PORT:-5001}"
 echo "Starting Social Metrics at http://127.0.0.1:${PORT}"
-open "http://127.0.0.1:${PORT}" >/dev/null 2>&1 || true
 uv run python gui_app.py --port "${PORT}" --open-browser
 
 echo

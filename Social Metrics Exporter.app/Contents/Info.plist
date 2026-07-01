@@ -8,6 +8,8 @@
   <string>Social Metrics Exporter</string>
   <key>CFBundleExecutable</key>
   <string>launcher</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
   <string>local.social-metrics-exporter</string>
   <key>CFBundleInfoDictionaryVersion</key>
