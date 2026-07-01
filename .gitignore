@@ -11,6 +11,7 @@ __pycache__/
 *.py[cod]
 .DS_Store
 README_給朋友.md
+豬哥亮.jpg
 input/urls.txt
 !input/urls.example.txt
 output/
