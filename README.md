@@ -7,47 +7,70 @@ The exporter only writes scraped fields. It does not calculate campaign value, w
 ## Requirements
 
 - Python 3.11+
-- `uv` recommended
-- Playwright Chromium
+- `uv`
+- Playwright Chromium, installed automatically by the launcher
 
-## Installation
+Install `uv` if it is not already available:
 
-Recommended setup:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Restart the terminal after installation if `uv` is not found.
+
+## Run On macOS
+
+Clone the repository, then open the app from Finder:
+
+```bash
+git clone https://github.com/csz022/social-metrics-exporter.git
+cd social-metrics-exporter
+open "Social Metrics Exporter.app"
+```
+
+The app opens Terminal, prepares dependencies, installs Chromium if needed, and starts the local dashboard at:
+
+```text
+http://127.0.0.1:5001
+```
+
+If macOS blocks the app on first launch, right-click `Social Metrics Exporter.app`, choose `Open`, then confirm.
+
+Command-line launcher:
+
+```bash
+./run_gui_mac.command
+```
+
+## Run On Windows
+
+Open the project folder and double-click:
+
+```text
+run_gui.bat
+```
+
+The launcher prepares dependencies, installs Chromium if needed, and starts the local dashboard at:
+
+```text
+http://127.0.0.1:5001
+```
+
+## CLI
+
+Run the GUI directly:
 
 ```bash
 uv sync
 uv run playwright install chromium
-```
-
-Alternative pip setup:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m playwright install chromium
-```
-
-## Run
-
-GUI:
-
-```bash
 uv run python gui_app.py --port 5001
 ```
 
-CLI:
+Run a URL list from the terminal:
 
 ```bash
 uv run python src/main.py --input input/urls.txt
 ```
-
-Platform launchers:
-
-- macOS: `Social Metrics Exporter.app` or `run_gui_mac.command`
-- Windows: `run_gui.bat`
-
-The launchers prepare dependencies, install Chromium, and open `http://127.0.0.1:5001`.
 
 ## Input
 
