@@ -20,12 +20,13 @@ Restart the terminal after installation if `uv` is not found.
 
 ## Run On macOS
 
-Clone the repository, then open the app from Finder:
+Clone the repository and build the local macOS app:
 
 ```bash
 git clone https://github.com/csz022/social-metrics-exporter.git
 cd social-metrics-exporter
-open "Social Metrics Exporter.app"
+uv run python scripts/build_mac_app.py
+open "dist/Social Metrics Exporter.app"
 ```
 
 The app opens Terminal, prepares dependencies, installs Chromium if needed, and starts the local dashboard at:
@@ -36,7 +37,7 @@ http://127.0.0.1:5001
 
 If macOS blocks the app on first launch, right-click `Social Metrics Exporter.app`, choose `Open`, then confirm.
 
-`Social Metrics Exporter.app` contains the app code and can be moved to the Desktop or Applications folder.
+`dist/Social Metrics Exporter.app` contains the app code and can be moved to the Desktop or Applications folder. Rebuild it after changing root source files.
 
 Command-line launcher:
 

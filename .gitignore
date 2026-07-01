@@ -15,5 +15,6 @@ input/urls.txt
 !input/urls.example.txt
 output/
 output/debug/
+dist/
 tmp_test/
 tmp_*/

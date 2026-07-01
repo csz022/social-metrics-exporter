@@ -1,6 +1,0 @@
-# Copy this file to input/urls.txt, then replace the sample URLs.
-# One supported social URL per line. Blank lines and comments are ignored.
-
-https://www.threads.com/@example/post/POST_ID
-https://www.instagram.com/p/POST_ID/
-https://www.facebook.com/example/posts/POST_ID
