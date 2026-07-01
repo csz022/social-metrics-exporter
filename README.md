@@ -36,6 +36,8 @@ http://127.0.0.1:5001
 
 If macOS blocks the app on first launch, right-click `Social Metrics Exporter.app`, choose `Open`, then confirm.
 
+Keep `Social Metrics Exporter.app` inside the project folder. To place it on the Desktop, create a Finder alias instead of copying the `.app`.
+
 Command-line launcher:
 
 ```bash
