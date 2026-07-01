@@ -4,6 +4,25 @@ Local social post metrics exporter for Threads, Instagram, and Facebook. The too
 
 The exporter only writes scraped fields. It does not calculate campaign value, weighted engagement, unit price, or other business formulas.
 
+## macOS Download
+
+Download `Social Metrics Exporter.zip` from the project release page, unzip it, then move `Social Metrics Exporter.app` to the Desktop or Applications folder.
+
+On first launch:
+
+1. Right-click `Social Metrics Exporter.app`.
+2. Choose `Open`.
+3. Confirm the macOS security prompt.
+4. Keep the Terminal window open while using the dashboard.
+
+The app starts the local dashboard at:
+
+```text
+http://127.0.0.1:5001
+```
+
+The first launch prepares Python dependencies and installs Chromium. It can take a few minutes.
+
 ## Requirements
 
 - Python 3.11+
@@ -16,11 +35,11 @@ Install `uv` if it is not already available:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Restart the terminal after installation if `uv` is not found.
+Restart Terminal after installation if `uv` is not found.
 
-## Run On macOS
+## Build macOS App
 
-Clone the repository and build the local macOS app:
+Build a local app from source:
 
 ```bash
 git clone https://github.com/csz022/social-metrics-exporter.git
@@ -29,15 +48,14 @@ uv run python scripts/build_mac_app.py
 open "dist/Social Metrics Exporter.app"
 ```
 
-The app opens Terminal, prepares dependencies, installs Chromium if needed, and starts the local dashboard at:
+Create a zip for distribution:
 
-```text
-http://127.0.0.1:5001
+```bash
+cd dist
+ditto -c -k --sequesterRsrc --keepParent "Social Metrics Exporter.app" "Social Metrics Exporter.zip"
 ```
 
-If macOS blocks the app on first launch, right-click `Social Metrics Exporter.app`, choose `Open`, then confirm.
-
-`dist/Social Metrics Exporter.app` contains the app code and can be moved to the Desktop or Applications folder. Rebuild it after changing root source files.
+Upload `dist/Social Metrics Exporter.zip` to the release page. Rebuild the app after changing root source files.
 
 Command-line launcher:
 
