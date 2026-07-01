@@ -87,14 +87,7 @@ if [ ! -f "$RUNNER" ]; then
 fi
 
 chmod +x "$RUNNER"
-RUNNER_ESCAPED="$(printf "%q" "$RUNNER")"
-
-osascript <<APPLESCRIPT
-tell application "Terminal"
-  activate
-  do script "$RUNNER_ESCAPED"
-end tell
-APPLESCRIPT
+exec "$RUNNER"
 """,
         encoding="utf-8",
     )
