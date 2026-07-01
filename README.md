@@ -44,7 +44,7 @@ uv run python src/main.py --input input/urls.txt
 
 Platform launchers:
 
-- macOS: `run_gui_mac.command`
+- macOS: `Social Metrics Exporter.app` or `run_gui_mac.command`
 - Windows: `run_gui.bat`
 
 The launchers prepare dependencies, install Chromium, and open `http://127.0.0.1:5001`.

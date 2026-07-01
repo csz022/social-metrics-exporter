@@ -1,0 +1,20 @@
+#!/bin/zsh
+set -e
+
+REPO_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+RUNNER="$REPO_DIR/run_gui_mac.command"
+
+if [ ! -f "$RUNNER" ]; then
+  osascript -e 'display dialog "run_gui_mac.command was not found next to this app." buttons {"OK"} default button "OK" with icon stop'
+  exit 1
+fi
+
+chmod +x "$RUNNER"
+REPO_DIR_ESCAPED="$(printf "%q" "$REPO_DIR")"
+
+osascript <<APPLESCRIPT
+tell application "Terminal"
+  activate
+  do script "cd $REPO_DIR_ESCAPED && ./run_gui_mac.command"
+end tell
+APPLESCRIPT
