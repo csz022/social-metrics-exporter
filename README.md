@@ -21,7 +21,8 @@ The app starts the local dashboard at:
 http://127.0.0.1:5001
 ```
 
-The first launch prepares Python dependencies and installs Chromium. It can take a few minutes.
+The first launch may ask to install `uv`, then prepares Python dependencies and installs Chromium. It can take a few minutes.
+Terminal shows progress steps from `[1/4]` to `[4/4]` while startup is running.
 
 ## Requirements
 
