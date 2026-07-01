@@ -62,7 +62,7 @@ Run the GUI directly:
 
 ```bash
 uv sync
-uv run playwright install chromium
+uv run python -m playwright install chromium
 uv run python gui_app.py --port 5001
 ```
 

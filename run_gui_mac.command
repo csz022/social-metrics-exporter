@@ -20,7 +20,7 @@ echo "Syncing Python dependencies..."
 uv sync
 
 echo "Installing or checking Playwright Chromium..."
-uv run playwright install chromium
+uv run python -m playwright install chromium
 
 PORT="${GUI_PORT:-5001}"
 echo "Starting Social Metrics at http://127.0.0.1:${PORT}"

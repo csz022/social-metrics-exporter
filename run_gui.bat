@@ -25,7 +25,7 @@ if errorlevel 1 (
 )
 
 echo Installing or checking Playwright Chromium...
-uv run playwright install chromium
+uv run python -m playwright install chromium
 if errorlevel 1 (
   pause
   exit /b 1
