@@ -100,8 +100,9 @@ def write_launch_script() -> None:
         """#!/bin/zsh
 set -e
 
-APP_DIR="$(cd "$(dirname "$0")/app" && pwd)"
-cd "$APP_DIR"
+BUNDLED_APP_DIR="$(cd "$(dirname "$0")/app" && pwd)"
+DATA_ROOT="$HOME/Library/Application Support/Social Metrics Exporter"
+APP_DIR="$DATA_ROOT/app"
 
 ensure_uv() {
   export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
@@ -133,22 +134,29 @@ ensure_uv() {
   fi
 }
 
+echo "[1/5] Checking uv package manager..."
 ensure_uv
+
+echo "[2/5] Preparing writable app workspace..."
+mkdir -p "$DATA_ROOT"
+rm -rf "$APP_DIR"
+ditto "$BUNDLED_APP_DIR" "$APP_DIR"
+cd "$APP_DIR"
 
 if [ ! -f ".env" ] && [ -f ".env.example" ]; then
   cp ".env.example" ".env"
 fi
 
-echo "[1/4] Preparing Python environment..."
+echo "[3/5] Installing Python packages..."
 uv sync
 
-echo "[2/4] Installing browser runtime if needed..."
+echo "[4/5] Installing browser runtime if needed..."
 uv run python -m playwright install chromium
 
 PORT="${GUI_PORT:-5001}"
-echo "[3/4] Starting local dashboard..."
+echo "[5/5] Starting local dashboard..."
 echo "Starting Social Metrics at http://127.0.0.1:${PORT}"
-echo "[4/4] Opening browser. Keep this Terminal window open while using the app."
+echo "Opening browser. Keep this Terminal window open while using the app."
 uv run python gui_app.py --port "${PORT}" --open-browser
 
 echo

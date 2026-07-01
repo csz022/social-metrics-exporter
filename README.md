@@ -21,10 +21,14 @@ The app starts the local dashboard at:
 http://127.0.0.1:5001
 ```
 
-The first launch may ask to install `uv`, then prepares Python dependencies and installs Chromium. It can take a few minutes.
-Terminal shows progress steps from `[1/4]` to `[4/4]` while startup is running.
+The first launch may ask to install `uv`. After that, the app prepares Python, installs Python packages, and installs Chromium automatically. It can take a few minutes and requires an internet connection.
+Terminal shows progress steps from `[1/5]` to `[5/5]` while startup is running.
 
 ## Requirements
+
+For the macOS app download, an internet connection is enough for first launch setup.
+
+For source development and CLI usage:
 
 - Python 3.11+
 - `uv`
