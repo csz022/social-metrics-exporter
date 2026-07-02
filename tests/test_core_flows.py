@@ -367,6 +367,32 @@ class SocialParserTests(unittest.TestCase):
         self.assertEqual(fb_row["reply_count"], 1)
         self.assertEqual(fb_row["repost_count"], "N/A")
 
+    def test_facebook_reel_share_action_is_not_share_count(self) -> None:
+        fb_row = parse_social_page(
+            "FACEBOOK",
+            "https://www.facebook.com/reel/123",
+            """
+            <html><head>
+              <meta property="og:title" content="Example Page">
+              <meta property="og:description" content="Campaign reel">
+            </head><body></body></html>
+            """,
+            """
+            Campaign reel
+            5
+            1
+            分享
+            分享到你的個人檔案
+            分享到粉絲專頁
+            3
+            """,
+        )
+
+        self.assertEqual(fb_row["status"], "success")
+        self.assertEqual(fb_row["like_count"], 5)
+        self.assertEqual(fb_row["reply_count"], 1)
+        self.assertEqual(fb_row["repost_count"], "N/A")
+
     def test_profile_follower_count_from_text_and_json(self) -> None:
         self.assertEqual(parse_profile_follower_count("IG", "", "1.2萬 followers"), 12000)
         self.assertEqual(parse_profile_follower_count("FACEBOOK", "", "1.5 億位追蹤者"), 150000000)

@@ -71,23 +71,23 @@ def parse_profile_follower_count(platform: str, html: str, visible_text: str, ne
 
 
 IG_LIKE_PATTERNS = [
-    r"([\d,.]+[萬万千KkMm]?)\s*(?:個)?(?:讚|likes?)",
-    r"([\d,.]+[萬万千KkMm]?)\s*likes?",
+    r"([\d,.]+[萬万千KkMm]?)[^\S\r\n]*(?:個)?(?:讚|likes?)",
+    r"([\d,.]+[萬万千KkMm]?)[^\S\r\n]*likes?",
 ]
 IG_COMMENT_PATTERNS = [
-    r"([\d,.]+[萬万千KkMm]?)\s*(?:則|個)?(?:留言|comments?)",
+    r"([\d,.]+[萬万千KkMm]?)[^\S\r\n]*(?:則|個)?(?:留言|comments?)",
 ]
 FB_REACTION_PATTERNS = [
-    r"([\d,.]+[萬万千KkMm]?)\s*(?:個)?(?:讚|心情|likes?|reactions?)",
+    r"([\d,.]+[萬万千KkMm]?)[^\S\r\n]*(?:個)?(?:讚|心情|likes?|reactions?)",
 ]
 COMMENT_PATTERNS = [
-    r"([\d,.]+[萬万千KkMm]?)\s*(?:則|個)?(?:留言|comments?)",
+    r"([\d,.]+[萬万千KkMm]?)[^\S\r\n]*(?:則|個)?(?:留言|comments?)",
 ]
 SHARE_PATTERNS = [
-    r"([\d,.]+[萬万千KkMm]?)\s*(?:次|則|個)?(?:分享|shares?)",
+    r"([\d,.]+[萬万千KkMm]?)[^\S\r\n]*(?:次|則|個)?(?:分享|shares?)",
 ]
 VIEW_PATTERNS = [
-    r"([\d,.]+[萬万千KkMm]?)\s*(?:次|個)?(?:觀看|瀏覽|views?|plays?)",
+    r"([\d,.]+[萬万千KkMm]?)[^\S\r\n]*(?:次|個)?(?:觀看|瀏覽|views?|plays?)",
 ]
 
 IG_LIKE_KEYS = ("like_count", "likeCount", "edge_liked_by", "edge_media_preview_like")
@@ -130,8 +130,8 @@ def _extract_dom_metrics(platform: str, post_url: str, root) -> dict[str, int]:
             root,
             "like_count",
             (
-                r"(?:所有)?心情[:：]?\s*(\d+(?:\.\d+)?)",
-                r"(\d+(?:\.\d+)?)\s*(?:個)?(?:讚|likes?|reactions?)",
+                r"(?:所有)?心情[:：]?[^\S\r\n]*(\d+(?:\.\d+)?)",
+                r"(\d+(?:\.\d+)?)[^\S\r\n]*(?:個)?(?:讚|likes?|reactions?)",
             ),
         )
         metrics.update(
@@ -139,7 +139,7 @@ def _extract_dom_metrics(platform: str, post_url: str, root) -> dict[str, int]:
                 root,
                 "reply_count",
                 (
-                    r"(\d+(?:\.\d+)?)\s*(?:則|個)?(?:留言|comments?)",
+                    r"(\d+(?:\.\d+)?)[^\S\r\n]*(?:則|個)?(?:留言|comments?)",
                 ),
             )
         )
@@ -148,7 +148,7 @@ def _extract_dom_metrics(platform: str, post_url: str, root) -> dict[str, int]:
                 root,
                 "repost_count",
                 (
-                    r"(\d+(?:\.\d+)?)\s*(?:次|則|個)?(?:分享|shares?)",
+                    r"(\d+(?:\.\d+)?)[^\S\r\n]*(?:次|則|個)?(?:分享|shares?)",
                 ),
             )
         )
@@ -157,7 +157,7 @@ def _extract_dom_metrics(platform: str, post_url: str, root) -> dict[str, int]:
                 root,
                 "view_count",
                 (
-                    r"(\d+(?:\.\d+)?)\s*(?:次|個)?(?:觀看|瀏覽|views?|plays?|曝光|impressions?)",
+                    r"(\d+(?:\.\d+)?)[^\S\r\n]*(?:次|個)?(?:觀看|瀏覽|views?|plays?|曝光|impressions?)",
                 ),
             )
         )
@@ -200,7 +200,34 @@ def _extract_facebook_reel_rail_metrics(post_url: str, text: str) -> dict[str, i
         return {}
 
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    numeric_runs: list[list[int]] = []
+    action_index = _facebook_reel_action_index(lines)
+    if action_index is None:
+        rail = max((_numeric_runs(lines)), key=len, default=[])
+        if len(rail) != 2:
+            return {}
+        return {"like_count": rail[0], "reply_count": rail[1]}
+
+    rail: list[int] = []
+    for line in reversed(lines[:action_index]):
+        if not _is_bare_count_line(line):
+            break
+        parsed = _parse_human_count(line)
+        if parsed is None:
+            break
+        rail.append(parsed)
+    rail.reverse()
+
+    if len(rail) < 2:
+        return {}
+
+    result = {"like_count": rail[0], "reply_count": rail[1]}
+    if len(rail) >= 3:
+        result["repost_count"] = rail[2]
+    return result
+
+
+def _numeric_runs(lines: list[str]) -> list[list[int]]:
+    runs: list[list[int]] = []
     current: list[int] = []
     for line in lines:
         if _is_bare_count_line(line):
@@ -209,19 +236,19 @@ def _extract_facebook_reel_rail_metrics(post_url: str, text: str) -> dict[str, i
                 current.append(parsed)
             continue
         if current:
-            numeric_runs.append(current)
+            runs.append(current)
             current = []
     if current:
-        numeric_runs.append(current)
+        runs.append(current)
+    return runs
 
-    rail = max((run for run in numeric_runs if 2 <= len(run) <= 4), key=len, default=[])
-    if len(rail) < 2:
-        return {}
 
-    result = {"like_count": rail[0], "reply_count": rail[1]}
-    if len(rail) >= 3:
-        result["repost_count"] = rail[2]
-    return result
+def _facebook_reel_action_index(lines: list[str]) -> int | None:
+    action_labels = {"儲存", "另存新檔", "分享", "傳送至Keep筆記", "save", "share"}
+    for index, line in enumerate(lines):
+        if line.strip().lower() in action_labels:
+            return index
+    return None
 
 
 def _looks_like_facebook_reel(post_url: str, text: str) -> bool:
